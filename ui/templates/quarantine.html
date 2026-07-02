@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Quarantine{% endblock %}
+{% block page_title %}Quarantine queue{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">⚑ {{ entries|length }} entries pending review</span>
+  </div>
+  {% if entries %}
+  <div class="table-wrap">
+  <table>
+    <tr><th>Agent</th><th>Content</th><th>Trust</th><th>Reason</th><th>Date</th><th></th></tr>
+    {% for e in entries %}
+    <tr id="qrow-{{ e.id }}" class="mem-row" style="transition:opacity .3s"
+        onclick="showQuarantineDetail(event, this)" title="Click to view full content"
+        data-content="{{ e.content }}" data-agent="{{ e.agent_id }}"
+        data-trust="{{ '%.2f'|format(e.trust_score) }}" data-reason="{{ e.reason }}"
+        data-date="{{ e.created_at[:19] }}" data-id="{{ e.id }}">
+      <td class="cell-id">{{ e.agent_id }}</td>
+      <td><span class="cell-content" title="{{ e.content }}" style="max-width:340px">{{ e.content[:120] }}{% if e.content|length > 120 %}…{% endif %}</span></td>
+      <td>
+        <div class="trust-wrap">
+          <div class="trust-bar"><div class="trust-fill low" style="width:{{ (e.trust_score*100)|int }}%"></div></div>
+          {{ "%.2f"|format(e.trust_score) }}
+        </div>
+      </td>
+      <td style="font-size:12px;color:var(--muted)">{{ e.reason[:80] }}</td>
+      <td style="font-size:12px;color:var(--faint)">{{ e.created_at[:10] }}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-approve" onclick="approveEntry('{{ e.id }}', this.closest('tr'))">✓ Approve</button>
+        <button class="btn btn-sm btn-reject"  onclick="rejectEntry('{{ e.id }}', this.closest('tr'))">✕ Reject</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div style="font-size:32px">✓</div>
+    <p>All clear — no memories pending review.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

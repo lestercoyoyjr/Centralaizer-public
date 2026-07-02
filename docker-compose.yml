@@ -1,0 +1,35 @@
+# Centralaizer — full local stack. Run with:  docker compose up --build
+# Then: MCP http://localhost:3000/mcp · Memory Viewer http://localhost:3001
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+  centralaizer:
+    build: .
+    depends_on:
+      - ollama
+    environment:
+      # point the ollama python client at the ollama service (not localhost)
+      OLLAMA_HOST: http://ollama:11434
+      # redirect every store into the persistent volume (these are independent settings)
+      LM_DATA_DIR: /data
+      LM_DB_PATH: /data/memory.db
+      LM_CHROMA_DIR: /data/chroma
+      LM_GRAPH_PATH: /data/graph.duckdb
+      # bind all interfaces so the published ports are reachable from the host
+      LM_MCP_HOST: 0.0.0.0
+      LM_UI_HOST: 0.0.0.0
+    ports:
+      # bound to 127.0.0.1 on the host to keep the hub local-only
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - memory-data:/data
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+  memory-data:

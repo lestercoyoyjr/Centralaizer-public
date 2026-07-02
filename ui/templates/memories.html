@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Memories{% endblock %}
+{% block page_title %}All memories{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-primary" onclick="openWriteModal()">＋ Write memory</button>
+{% endblock %}
+
+{% block content %}
+<form method="get" action="/memories" class="search-bar">
+  <input type="search" name="q" class="search-input" placeholder="Search memories…" value="{{ q }}">
+  <select name="memory_type">
+    <option value="">All types</option>
+    <option value="semantic"   {% if memory_type=='semantic'   %}selected{% endif %}>Semantic</option>
+    <option value="episodic"   {% if memory_type=='episodic'   %}selected{% endif %}>Episodic</option>
+    <option value="procedural" {% if memory_type=='procedural' %}selected{% endif %}>Procedural</option>
+    <option value="relational" {% if memory_type=='relational' %}selected{% endif %}>Relational</option>
+  </select>
+  <select name="owner">
+    <option value="">All owners</option>
+    <option value="shared"   {% if owner=='shared'   %}selected{% endif %}>Shared</option>
+    <option value="personal" {% if owner=='personal' %}selected{% endif %}>Personal</option>
+  </select>
+  <button type="submit" class="btn">Search</button>
+  {% if q or memory_type or owner %}
+  <a href="/memories" class="btn">Clear</a>
+  {% endif %}
+</form>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">{% if q %}Results for "{{ q }}"{% else %}{{ total }} memories{% endif %}{% if offset %} · page {{ (offset // page_size) + 1 }}{% endif %}</span>
+  </div>
+  {% if memories %}
+  <div class="table-wrap">
+  <table>
+    <tr>
+      <th>Type</th><th>Content</th><th>Agent</th><th>Owner</th>
+      <th>Trust</th><th>Decay</th><th>Accessed</th>
+      {% if q %}<th>Score</th><th>Matched via</th>{% endif %}
+      <th></th>
+    </tr>
+    {% for m in memories %}
+    <tr id="mrow-{{ m.id }}" class="mem-row" style="transition:opacity .3s"
+        onclick="showMemoryDetail(event, this)" title="Click to view full content"
+        data-id="{{ m.id }}" data-type="{{ m.memory_type }}" data-content="{{ m.content }}"
+        data-agent="{{ m.agent_id }}" data-owner="{{ m.owner }}"
+        data-trust="{{ '%.2f'|format(m.trust_score) }}" data-decay="{{ '%.2f'|format(m.decayed_score) }}"
+        data-accessed="{{ m.accessed_at[:19] if m.accessed_at else '' }}"
+        {% if q %}data-score="{{ '%.3f'|format(m.score) if m.score is defined else '' }}" data-matched="{{ m.matched_via if m.matched_via is defined else '' }}"{% endif %}>
+      <td><span class="badge badge-{{ m.memory_type }}">{{ m.memory_type }}</span></td>
+      <td><span class="cell-content" title="{{ m.content }}" style="max-width:300px">{{ m.content[:90] }}{% if m.content|length > 90 %}…{% endif %}</span></td>
+      <td class="cell-id">{{ m.agent_id }}</td>
+      <td><span class="badge {% if m.owner=='shared' %}badge-semantic{% else %}badge-episodic{% endif %}">{{ m.owner }}</span></td>
+      <td>
+        <div class="trust-wrap">
+          <div class="trust-bar"><div class="trust-fill {% if m.trust_score < 0.5 %}low{% elif m.trust_score < 0.75 %}mid{% endif %}"
+               style="width:{{ (m.trust_score*100)|int }}%"></div></div>
+          {{ "%.2f"|format(m.trust_score) }}
+        </div>
+      </td>
+      <td style="color:var(--muted)">{{ "%.2f"|format(m.decayed_score) }}</td>
+      <td style="color:var(--faint);font-size:12px">{{ m.accessed_at[:10] if m.accessed_at else '—' }}</td>
+      {% if q %}
+      <td style="font-size:12px;color:var(--accent-t)">{{ "%.3f"|format(m.score) if m.score is defined else '—' }}</td>
+      <td style="font-size:11px;color:var(--muted)">{{ m.matched_via if m.matched_via is defined else '—' }}</td>
+      {% endif %}
+      <td>
+        <button class="btn btn-sm btn-danger btn-icon"
+          onclick="deleteMemory('{{ m.id }}', this.closest('tr'))" title="Delete">✕</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% if (offset > 0 or has_next) %}
+  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:12px 18px;border-top:1px solid var(--border)">
+    {% if total_pages %}
+      {% if offset > 0 %}
+      <a href="/memories?memory_type={{ memory_type }}&owner={{ owner }}&offset={{ offset - page_size }}" class="btn btn-sm">‹</a>
+      {% endif %}
+      {% for p in range(1, total_pages + 1) %}
+        {% if p == current_page %}
+        <span class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)">{{ p }}</span>
+        {% else %}
+        <a href="/memories?memory_type={{ memory_type }}&owner={{ owner }}&offset={{ (p - 1) * page_size }}" class="btn btn-sm">{{ p }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if has_next %}
+      <a href="/memories?memory_type={{ memory_type }}&owner={{ owner }}&offset={{ offset + page_size }}" class="btn btn-sm">›</a>
+      {% endif %}
+    {% else %}
+      {% if offset > 0 %}
+      <a href="/memories?q={{ q|urlencode }}&memory_type={{ memory_type }}&owner={{ owner }}&offset={{ offset - page_size }}" class="btn btn-sm">← Prev</a>
+      {% endif %}
+      <span style="color:var(--muted);font-size:13px">page {{ current_page }}</span>
+      {% if has_next %}
+      <a href="/memories?q={{ q|urlencode }}&memory_type={{ memory_type }}&owner={{ owner }}&offset={{ offset + page_size }}" class="btn btn-sm">Next →</a>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty">
+    <div style="font-size:32px">🔍</div>
+    <p>No memories found{% if q %} for "{{ q }}"{% endif %}.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
