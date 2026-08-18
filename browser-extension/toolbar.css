@@ -1,0 +1,43 @@
+#czr-bar {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: #1a1a18;
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  font: 13px/1 -apple-system, system-ui, sans-serif;
+}
+#czr-bar .czr-logo { font-size: 15px; }
+#czr-bar button {
+  background: #4f46e5;
+  color: #fff;
+  border: 0;
+  border-radius: 7px;
+  padding: 6px 11px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+#czr-bar button:hover { background: #6366f1; }
+#czr-bar #czr-auto { background: #3f3f46; }
+#czr-bar #czr-auto.czr-on { background: #16a34a; }
+.czr-toast {
+  position: fixed;
+  bottom: 64px;
+  right: 16px;
+  z-index: 2147483647;
+  background: #1a1a18;
+  color: #fff;
+  padding: 9px 13px;
+  border-radius: 8px;
+  font: 13px/1.3 -apple-system, system-ui, sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  max-width: 280px;
+}
+.czr-toast.czr-err { background: #7f1d1d; }

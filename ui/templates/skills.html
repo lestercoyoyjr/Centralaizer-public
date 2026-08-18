@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Skills{% endblock %}
+{% block page_title %}Skill library{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-primary" onclick="openSkillModal()">＋ Add skill</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">◇ {{ skills|length }} skills</span>
+  </div>
+  {% if skills %}
+  <div class="table-wrap">
+  <table>
+    <tr><th>Name</th><th>Level</th><th>Uses</th><th>Successes</th><th>Description</th><th>Updated</th></tr>
+    {% for s in skills %}
+    <tr class="mem-row" onclick="showSkillDetail(event, this)" title="Click to view skill detail"
+        data-name="{{ s.name }}" data-level="{{ s.level }}" data-description="{{ s.description }}"
+        data-template="{{ s.template }}" data-uses="{{ s.use_count }}" data-successes="{{ s.success_count }}"
+        data-created="{{ s.created_at[:19] }}" data-updated="{{ s.updated_at[:19] }}">
+      <td><strong>{{ s.name }}</strong></td>
+      <td><span class="badge badge-{{ s.level }}">{{ s.level }}</span></td>
+      <td>{{ s.use_count }}</td>
+      <td>{{ s.success_count }}</td>
+      <td style="color:var(--muted)">{{ s.description[:80] }}</td>
+      <td style="font-size:12px;color:var(--faint)">{{ s.updated_at[:10] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div style="font-size:32px">◇</div>
+    <p>No skills yet. Add a skill or let agents promote procedural memories.</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="modal-bg" id="skill-modal">
+  <div class="modal">
+    <h3>Add skill</h3>
+    <form onsubmit="submitSkill(event)">
+      <div class="field">
+        <label>Name (unique)</label>
+        <input type="text" name="name" placeholder="e.g. debug-auth-flow" required>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" name="description" placeholder="What this skill does" required>
+      </div>
+      <div class="field">
+        <label>Template / workflow</label>
+        <textarea name="template" placeholder="Step-by-step prompt or workflow template…" required></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn" onclick="closeSkillModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create skill</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

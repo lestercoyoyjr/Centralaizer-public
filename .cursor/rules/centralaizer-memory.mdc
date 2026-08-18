@@ -1,0 +1,15 @@
+---
+description: Centralaizer shared-memory hub — recall before, remember after
+alwaysApply: true
+---
+
+This machine runs **Centralaizer**, a local shared-memory hub (MCP server `centralaizer`,
+http://localhost:3000, zero cloud egress) holding context from every AI tool the user works with —
+so knowledge from one tool/session is available in the next.
+
+- **Before** starting any non-trivial task, call the `memory_search` tool with the user's request
+  (or its key terms) to pull relevant prior decisions, fixes, and facts. Use anything relevant and
+  say when you did.
+- **After** you make a durable decision, discover a fact, or land a fix, call `memory_write` with a
+  concise 1–2 sentence summary so the next session — in any tool — has it.
+- Skip both only for trivial edits. Never invent memories — persist only what actually happened.

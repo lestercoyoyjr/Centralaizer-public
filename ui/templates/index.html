@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-primary" onclick="openWriteModal()">＋ Write memory</button>
+{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+  <a class="stat-card clickable" href="/memories" title="View all memories">
+    <div class="stat-label">Total memories</div>
+    <div class="stat-value" data-stat="total">{{ stats.total }}</div>
+  </a>
+  <a class="stat-card clickable" href="/memories?memory_type=semantic" title="View semantic memories">
+    <div class="stat-label">Semantic</div>
+    <div class="stat-value">{{ stats.by_type.get('semantic', 0) }}</div>
+  </a>
+  <a class="stat-card clickable" href="/memories?memory_type=episodic" title="View episodic memories">
+    <div class="stat-label">Episodic</div>
+    <div class="stat-value">{{ stats.by_type.get('episodic', 0) }}</div>
+  </a>
+  <a class="stat-card clickable" href="/memories?memory_type=procedural" title="View procedural memories">
+    <div class="stat-label">Procedural</div>
+    <div class="stat-value">{{ stats.by_type.get('procedural', 0) }}</div>
+  </a>
+  <a class="stat-card clickable" href="#" onclick="showGraphEdges(); return false" title="View graph edges">
+    <div class="stat-label">Graph edges</div>
+    <div class="stat-value">{{ stats.graph_edges }}</div>
+  </a>
+  <a class="stat-card clickable" href="/skills" title="View skills">
+    <div class="stat-label">Skills</div>
+    <div class="stat-value">{{ stats.skills }}</div>
+  </a>
+  <a class="stat-card clickable" href="#" onclick="showAgents(); return false" title="View active agents">
+    <div class="stat-label">Active agents</div>
+    <div class="stat-value">{{ stats.agents }}</div>
+  </a>
+  <a class="stat-card clickable" href="/quarantine" title="Review quarantined writes">
+    <div class="stat-label">Quarantine</div>
+    <div class="stat-value" style="color:{% if stats.quarantine_pending %}#dc2626{% else %}#16a34a{% endif %}">
+      {{ stats.quarantine_pending }}
+    </div>
+    <div class="stat-sub">pending review</div>
+  </a>
+</div>
+
+{% if quarantine %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">⚑ Quarantine — pending review</span>
+    <a href="/quarantine" class="btn btn-sm">View all</a>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Agent</th><th>Content</th><th>Trust</th><th>Reason</th><th></th></tr>
+    {% for e in quarantine %}
+    <tr id="qrow-{{ e.id }}" class="mem-row" style="transition:opacity .3s"
+        onclick="showQuarantineDetail(event, this)" title="Click to view full content"
+        data-content="{{ e.content }}" data-agent="{{ e.agent_id }}"
+        data-trust="{{ '%.2f'|format(e.trust_score) }}" data-reason="{{ e.reason }}"
+        data-date="{{ e.created_at[:19] }}" data-id="{{ e.id }}">
+      <td class="cell-id">{{ e.agent_id }}</td>
+      <td><span class="cell-content" title="{{ e.content }}">{{ e.content[:100] }}{% if e.content|length > 100 %}…{% endif %}</span></td>
+      <td>
+        <div class="trust-wrap">
+          <div class="trust-bar"><div class="trust-fill low" style="width:{{ (e.trust_score*100)|int }}%"></div></div>
+          {{ "%.2f"|format(e.trust_score) }}
+        </div>
+      </td>
+      <td><span style="font-size:12px;color:var(--muted)">{{ e.reason[:60] }}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-approve" onclick="approveEntry('{{ e.id }}', this.closest('tr'))">Approve</button>
+        <button class="btn btn-sm btn-reject"  onclick="rejectEntry('{{ e.id }}', this.closest('tr'))">Reject</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">◈ Recent memories</span>
+    <a href="/memories" class="btn btn-sm">View all</a>
+  </div>
+  {% if memories %}
+  <div class="table-wrap">
+  <table>
+    <tr><th>Type</th><th>Content</th><th>Agent</th><th>Trust</th><th>Decay</th><th></th></tr>
+    {% for m in memories %}
+    <tr id="mrow-{{ m.id }}" class="mem-row" style="transition:opacity .3s"
+        onclick="showMemoryDetail(event, this)" title="Click to view full content"
+        data-id="{{ m.id }}" data-type="{{ m.memory_type }}" data-content="{{ m.content }}"
+        data-agent="{{ m.agent_id }}" data-owner="{{ m.owner }}"
+        data-trust="{{ '%.2f'|format(m.trust_score) }}" data-decay="{{ '%.2f'|format(m.decayed_score) }}"
+        data-accessed="{{ m.accessed_at[:19] if m.accessed_at else '' }}">
+      <td><span class="badge badge-{{ m.memory_type }}">{{ m.memory_type }}</span></td>
+      <td><span class="cell-content" title="{{ m.content }}">{{ m.content[:90] }}{% if m.content|length > 90 %}…{% endif %}</span></td>
+      <td class="cell-id">{{ m.agent_id }}</td>
+      <td>
+        <div class="trust-wrap">
+          <div class="trust-bar"><div class="trust-fill {% if m.trust_score < 0.5 %}low{% elif m.trust_score < 0.75 %}mid{% endif %}"
+               style="width:{{ (m.trust_score*100)|int }}%"></div></div>
+          {{ "%.2f"|format(m.trust_score) }}
+        </div>
+      </td>
+      <td style="color:var(--muted)">{{ "%.2f"|format(m.decayed_score) }}</td>
+      <td>
+        <button class="btn btn-sm btn-danger btn-icon"
+          onclick="deleteMemory('{{ m.id }}', this.closest('tr'))" title="Delete">✕</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div style="font-size:32px">🧠</div>
+    <p>No memories yet. Write your first memory or connect an agent via MCP.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% if skills %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">◇ Skill library</span>
+    <a href="/skills" class="btn btn-sm">Manage</a>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Name</th><th>Level</th><th>Uses</th><th>Successes</th><th>Description</th></tr>
+    {% for s in skills %}
+    <tr class="mem-row" onclick="showSkillDetail(event, this)" title="Click to view skill detail"
+        data-name="{{ s.name }}" data-level="{{ s.level }}" data-description="{{ s.description }}"
+        data-template="{{ s.template }}" data-uses="{{ s.use_count }}" data-successes="{{ s.success_count }}"
+        data-created="{{ s.created_at[:19] }}" data-updated="{{ s.updated_at[:19] }}">
+      <td><strong>{{ s.name }}</strong></td>
+      <td><span class="badge badge-{{ s.level }}">{{ s.level }}</span></td>
+      <td>{{ s.use_count }}</td>
+      <td>{{ s.success_count }}</td>
+      <td style="color:var(--muted)">{{ s.description[:60] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Erasure review{% endblock %}
+{% block page_title %}Erasure review queue{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">🔎 <span id="review-count-hdr">{{ entries|length }}</span> memories flagged by a forget</span>
+  </div>
+  <p style="color:var(--muted);font-size:13px;margin:0 0 12px">
+    A forgotten memory implicated these — either a paraphrase that restates it
+    (<b>semantic</b>) or an id-linked derivative (<b>provenance</b>). Review each: <b>Forget</b> if it
+    leaks the erased content, or <b>Dismiss</b> if it's a false positive.
+  </p>
+  {% if entries %}
+  <div class="table-wrap">
+  <table>
+    <tr><th>Kind</th><th>Agent</th><th>Content</th><th>Flagged by</th><th>Date</th><th></th></tr>
+    {% for e in entries %}
+    <tr id="rrow-{{ e.id }}" style="transition:opacity .3s">
+      <td><span class="badge {% if e.kind=='semantic' %}badge-quarantined{% else %}badge-relational{% endif %}">{{ e.kind }}</span></td>
+      <td class="cell-id">{{ e.agent_id }}</td>
+      <td><span class="cell-content" title="{{ e.content }}" style="max-width:340px">{{ e.content[:120] }}{% if e.content|length > 120 %}…{% endif %}</span></td>
+      <td style="font-size:11px;color:var(--faint)">{{ e.sources|join(', ')|truncate(24) }}</td>
+      <td style="font-size:12px;color:var(--faint)">{{ e.created_at[:10] }}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-reject"  onclick="forgetFlagged('{{ e.id }}', this.closest('tr'))">🗑 Forget</button>
+        <button class="btn btn-sm btn-approve" onclick="dismissFlag('{{ e.id }}', this.closest('tr'))">✓ Dismiss</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div style="font-size:32px">✓</div>
+    <p>Nothing flagged — no memories pending erasure review.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

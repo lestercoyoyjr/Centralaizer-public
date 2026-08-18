@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Centralaizer Bridge",
+  "version": "0.1.0",
+  "description": "Use your local Centralaizer memory hub from browser AI chats — Recall relevant memories into the prompt, Remember answers back.",
+  "permissions": ["storage"],
+  "host_permissions": ["http://localhost:3001/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*",
+        "https://chat.qwen.ai/*",
+        "https://claude.ai/*",
+        "https://www.perplexity.ai/*",
+        "https://poe.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://chat.deepseek.com/*",
+        "https://grok.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["toolbar.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": { "default_title": "Centralaizer Bridge" }
+}
